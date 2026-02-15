@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Activity, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
@@ -12,33 +11,16 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        setError(error.message)
-      } else {
-        router.push('/dashboard')
-        router.refresh()
-      }
-    } catch {
-      setError('An unexpected error occurred')
-    } finally {
-      setLoading(false)
-    }
+    // MVP: Demo mode - skip auth
+    router.push('/dashboard')
   }
 
-  // Demo login - bypass auth for demo purposes
   const handleDemoLogin = () => {
     router.push('/dashboard')
   }
@@ -46,7 +28,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f] p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -57,7 +38,6 @@ export default function LoginPage() {
           <p className="text-gray-400">Cross-chain market intelligence</p>
         </div>
 
-        {/* Login Form */}
         <div className="bg-[#111118] border border-[#222230] rounded-2xl p-8">
           <h2 className="text-xl font-semibold text-white mb-6">Sign in to your account</h2>
           
@@ -82,7 +62,6 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   className="w-full pl-11 pr-4 py-3 bg-[#0a0a0f] border border-[#333340] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                  required
                 />
               </div>
             </div>
@@ -100,7 +79,6 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full pl-11 pr-4 py-3 bg-[#0a0a0f] border border-[#333340] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-                  required
                 />
               </div>
             </div>
@@ -137,10 +115,6 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-
-        <p className="mt-6 text-center text-xs text-gray-500">
-          By signing in, you agree to our Terms of Service and Privacy Policy
-        </p>
       </div>
     </div>
   )

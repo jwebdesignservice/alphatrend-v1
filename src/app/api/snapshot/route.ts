@@ -1,64 +1,14 @@
 // GET /api/snapshot - Fetch latest snapshot data
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  try {
-    const supabase = await createClient();
-    
-    // Get latest snapshot ID
-    const { data: pointer, error: pointerError } = await supabase
-      .from('latest_snapshot_pointer')
-      .select('snapshot_id')
-      .single();
-    
-    if (pointerError || !pointer?.snapshot_id) {
-      // Return mock data if no snapshot exists yet
-      return NextResponse.json(getMockSnapshot());
-    }
-    
-    const snapshotId = pointer.snapshot_id;
-    
-    // Fetch snapshot details
-    const [
-      { data: snapshot },
-      { data: tokenOutputs },
-      { data: metaOutputs },
-      { data: chainOutputs },
-      { data: regimeOutput },
-    ] = await Promise.all([
-      supabase.from('snapshots').select('*').eq('snapshot_id', snapshotId).single(),
-      supabase.from('token_outputs')
-        .select('*, tokens(*)')
-        .eq('snapshot_id', snapshotId)
-        .order('structural_score', { ascending: false })
-        .limit(100),
-      supabase.from('meta_outputs')
-        .select('*, metas(*)')
-        .eq('snapshot_id', snapshotId)
-        .order('meta_score', { ascending: false })
-        .limit(8),
-      supabase.from('chain_outputs').select('*').eq('snapshot_id', snapshotId),
-      supabase.from('regime_outputs').select('*').eq('snapshot_id', snapshotId).single(),
-    ]);
-    
-    return NextResponse.json({
-      snapshot_id: snapshotId,
-      recalculated_at: snapshot?.recalculated_at,
-      snapshot_quality_score: snapshot?.snapshot_quality_score || 1,
-      tokens: tokenOutputs || [],
-      metas: metaOutputs || [],
-      chains: chainOutputs || [],
-      regime: regimeOutput?.regime_label || 'rotation',
-    });
-  } catch (error) {
-    console.error('Error fetching snapshot:', error);
-    return NextResponse.json(getMockSnapshot());
-  }
+  // MVP: Return mock data
+  return NextResponse.json(getMockSnapshot());
 }
 
 function getMockSnapshot() {
-  // Return mock data for development/demo
   return {
     snapshot_id: 'mock-snapshot-001',
     recalculated_at: new Date().toISOString(),
@@ -90,18 +40,18 @@ function generateMockTokens() {
   return tokens.map((t, i) => ({
     token_id: `mock-token-${i}`,
     ...t,
-    address: `0x${Math.random().toString(16).slice(2, 42)}`,
-    attention_score: 50 + Math.random() * 40,
-    liquidity_score: 40 + Math.random() * 50,
-    whale_score: 45 + Math.random() * 40,
-    engineering_score: Math.random() * 50,
-    integrity_label: Math.random() > 0.6 ? 'organic' : Math.random() > 0.3 ? 'mixed' : 'engineered',
-    lifecycle_phase: ['ignition', 'expansion', 'crowding'][Math.floor(Math.random() * 3)],
+    address: `0x${i.toString(16).padStart(40, '0')}`,
+    attention_score: 50 + (i * 5),
+    liquidity_score: 40 + (i * 6),
+    whale_score: 45 + (i * 4),
+    engineering_score: 10 + (i * 3),
+    integrity_label: i < 3 ? 'organic' : i < 6 ? 'mixed' : 'engineered',
+    lifecycle_phase: ['ignition', 'expansion', 'crowding', 'expansion', 'ignition', 'expansion', 'crowding', 'distribution'][i],
     driver_cards: [
       { label: 'Attention Acceleration', value: 'High', impact: 'positive' },
       { label: 'Whale Activity', value: 'Accumulating', impact: 'positive' },
     ],
-    confidence_score: 0.8 + Math.random() * 0.2,
+    confidence_score: 0.85,
   }));
 }
 
@@ -122,14 +72,14 @@ function generateMockMetas() {
     capital_share: m.capital_share,
     share_shift: m.shift,
     integrity_mix: {
-      organic: 40 + Math.random() * 40,
-      mixed: 20 + Math.random() * 30,
-      engineered: Math.random() * 30,
+      organic: 60 - i * 10,
+      mixed: 25 + i * 3,
+      engineered: 15 + i * 7,
     },
-    whale_overlap_score: 50 + Math.random() * 30,
+    whale_overlap_score: 60 + i * 5,
     driver_cards: [
       { label: 'Capital Flow', value: m.shift > 0 ? 'Inflow' : 'Outflow', impact: m.shift > 0 ? 'positive' : 'negative' },
     ],
-    token_count: 3 + Math.floor(Math.random() * 8),
+    token_count: 5 + i,
   }));
 }
